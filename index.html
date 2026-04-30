@@ -1,16 +1,94 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
-    <title>Test Map</title>
+    <meta charset="UTF-8">
+    <title>Switzerland GIS Project</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>#map { height: 100vh; }</style>
+    <style>
+        /* إعدادات الصفحة */
+        body { 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #f0ede5; /* لون خلفية هادئ خلف الإطار */
+        }
+
+        /* تصميم الإطار (Frame) */
+        .map-frame {
+            width: 90%; 
+            height: 85%;
+            padding: 15px;
+            background-color: #fff; /* لون الإطار الأبيض */
+            border: 2px solid #ccc; /* حدود الإطار */
+            border-radius: 20px; /* زوايا مستديرة */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); /* ظل لإعطاء عمق */
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* عنوان الخريطة فوق الفريم */
+        .map-title {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        /* حاوية الخريطة نفسها */
+        #map { 
+            flex-grow: 1; 
+            width: 100%; 
+            border-radius: 15px; /* زوايا مستديرة للخريطة داخل الإطار */
+        }
+
+        /* تنسيق أسماء الولايات */
+        .canton-label {
+            background: white;
+            border: 1px solid #999;
+            padding: 2px 5px;
+            font-weight: bold;
+            font-size: 11px;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 <body>
-    <div id="map"></div>
+
+    <div class="map-frame">
+        <div class="map-title">Switzerland Interactive Map</div>
+        <div id="map"></div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         var map = L.map('map').setView([46.8182, 8.2275], 8);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        // إضافة الولايات مع الليبل
+        fetch('switzerland.geojson')
+            .then(res => res.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: { color: "#d35400", weight: 2, fillOpacity: 0.4 }, // لون برتقالي مثل صورة فرنسا
+                    onEachFeature: function (feature, layer) {
+                        var name = feature.properties.NAME || feature.properties.name || feature.properties.NAME_1;
+                        if (name) {
+                            layer.bindTooltip(name, { permanent: true, direction: "center", className: "canton-label" });
+                        }
+                    }
+                }).addTo(map);
+            });
+
+        // إضافة الطرق
+        fetch('main_roads.geojson')
+            .then(res => res.json())
+            .then(data => {
+                L.geoJSON(data, { style: { color: "#333", weight: 1 } }).addTo(map);
+            });
     </script>
 </body>
 </html>
