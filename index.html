@@ -2,11 +2,23 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>مشروع جيوماتكس سويسرا</title>
+    <title>خريطة سويسرا التفاعلية</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100%; }
+        
+        /* تنسيق الليبل (الأسماء) */
+        .canton-label {
+            background: rgba(255, 255, 255, 0.7); /* خلفية بيضاء شفافة */
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px 5px;
+            font-weight: bold;
+            color: #333;
+            font-size: 11px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -16,15 +28,35 @@
         var map = L.map('map').setView([46.8182, 8.2275], 8);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        function addLayer(fileName, style) {
-            fetch(fileName)
+        // وظيفة لإضافة الطبقات مع الأسماء
+        function addLayerWithLabels(url, style, labelField) {
+            fetch(url)
                 .then(res => res.json())
-                .then(data => L.geoJSON(data, { style: style }).addTo(map));
+                .then(data => {
+                    L.geoJSON(data, {
+                        style: style,
+                        onEachFeature: function (feature, layer) {
+                            // التحقق من وجود اسم في البيانات (جربنا NAME و name و NAME_1)
+                            var name = feature.properties[labelField] || feature.properties.NAME || feature.properties.name || feature.properties.NAME_1;
+                            if (name) {
+                                layer.bindTooltip(name, {
+                                    permanent: true, // يظل ظاهراً دائماً
+                                    direction: "center",
+                                    className: "canton-label"
+                                });
+                            }
+                        }
+                    }).addTo(map);
+                });
         }
 
-        // استدعاء ملفاتك
-        addLayer('switzerland.geojson', { color: "red", weight: 2, fillOpacity: 0.1 });
-        addLayer('main_roads.geojson', { color: "#333", weight: 1 });
+        // إضافة حدود سويسرا مع الليبل (حاولنا تخمين اسم الحقل NAME)
+        addLayerWithLabels('switzerland.geojson', { color: "red", weight: 2, fillOpacity: 0.05 }, 'NAME');
+        
+        // إضافة الطرق بدون ليبل
+        fetch('main_roads.geojson').then(res => res.json()).then(data => {
+            L.geoJSON(data, { style: { color: "#333", weight: 1 } }).addTo(map);
+        });
     </script>
 </body>
 </html>
