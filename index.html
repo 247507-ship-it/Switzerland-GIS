@@ -2,60 +2,68 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>خريطة سويسرا التفاعلية</title>
+    <title>مشروع جيوماتكس سويسرا</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body { margin: 0; padding: 0; }
         #map { height: 100vh; width: 100%; }
-        
-        /* تنسيق الليبل (الأسماء) */
         .canton-label {
-            background: rgba(255, 255, 255, 0.7); /* خلفية بيضاء شفافة */
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 2px 5px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #999;
             font-weight: bold;
-            color: #333;
-            font-size: 11px;
-            white-space: nowrap;
+            font-size: 10px;
+            padding: 1px 3px;
         }
     </style>
 </head>
 <body>
+
     <div id="map"></div>
+
+    <!-- هنا يبدأ الـ Script -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // 1. إعداد الخريطة
         var map = L.map('map').setView([46.8182, 8.2275], 8);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // وظيفة لإضافة الطبقات مع الأسماء
-        function addLayerWithLabels(url, style, labelField) {
+        // 2. دالة إضافة الطبقات مع الأسماء (Symbology)
+        function addLayer(url, style, labelField) {
             fetch(url)
                 .then(res => res.json())
                 .then(data => {
                     L.geoJSON(data, {
                         style: style,
                         onEachFeature: function (feature, layer) {
-                            // التحقق من وجود اسم في البيانات (جربنا NAME و name و NAME_1)
-                            var name = feature.properties[labelField] || feature.properties.NAME || feature.properties.name || feature.properties.NAME_1;
+                            var name = feature.properties[labelField] || feature.properties.NAME || feature.properties.name;
                             if (name) {
-                                layer.bindTooltip(name, {
-                                    permanent: true, // يظل ظاهراً دائماً
-                                    direction: "center",
-                                    className: "canton-label"
-                                });
+                                layer.bindTooltip(name, { permanent: true, direction: "center", className: "canton-label" });
                             }
                         }
                     }).addTo(map);
                 });
         }
 
-        // إضافة حدود سويسرا مع الليبل (حاولنا تخمين اسم الحقل NAME)
-        addLayerWithLabels('switzerland.geojson', { color: "red", weight: 2, fillOpacity: 0.05 }, 'NAME');
-        
-        // إضافة الطرق بدون ليبل
-        fetch('main_roads.geojson').then(res => res.json()).then(data => {
-            L.geoJSON(data, { style: { color: "#333", weight: 1 } }).addTo(map);
+        // استدعاء الطبقات
+        addLayer('switzerland.geojson', { color: "red", weight: 2, fillOpacity: 0.1 }, 'NAME');
+        addLayer('main_roads.geojson', { color: "#333", weight: 1 });
+
+        // 3. إضافة المعالم (Symbols)
+        var landmarks = [
+            { name: "Matterhorn", coords: [45.9763, 7.6586], info: "جبل ماترهورن الشهير" },
+            { name: "Jet d'Eau", coords: [46.2074, 6.1559], info: "نافورة جنيف" },
+            { name: "Chillon Castle", coords: [46.4142, 6.9275], info: "قلعة شيلون التاريخية" }
+        ];
+
+        landmarks.forEach(function(place) {
+            L.circleMarker(place.coords, {
+                radius: 8,
+                fillColor: "#ff7800",
+                color: "#000",
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map).bindPopup("<b>" + place.name + "</b><br>" + place.info);
         });
     </script>
 </body>
